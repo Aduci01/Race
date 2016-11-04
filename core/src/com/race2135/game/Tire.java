@@ -15,13 +15,14 @@ public class Tire {
 
     Body body;
 
-    public enum Direction{up, down, right, left, stop};
-    Direction direction = Direction.stop;
+    /*public enum Direction{up, down, right, left, stop};
+    Direction direction = Direction.stop;*/
 
-    float maxForwardSpeed = 300 / Main.PPM;
-    float maxBackwardSpeed = -20 / Main.PPM;
-    float maxDriveForce;
-    float maxLateralImpulse;
+    //For further information, search for "bit fields"
+    public static final byte DIR_UP = 1, DIR_DOWN = 2, DIR_LEFT = 4, DIR_RIGHT = 8;
+    public byte direction = 0;
+
+    float maxForwardSpeed, maxBackwardSpeed, maxDriveForce, maxLateralImpulse;
 
 
     public Tire(World world) {
@@ -43,6 +44,7 @@ public class Tire {
         body.setUserData(this);
     }
 
+    //TODO create proper mutators and accessors
     public void setValues(float a, float b, float c, float d){
         maxForwardSpeed = a;
         maxBackwardSpeed = b;
@@ -51,83 +53,66 @@ public class Tire {
 
     }
 
-    public void updateDrive() {
-        float desiredSpeed = 0;
-        if(direction == Direction.up){
-            desiredSpeed = maxForwardSpeed;
-        } else if(direction == Direction.down){
-            desiredSpeed = maxBackwardSpeed;
-        } else {
-            return;
-        }
-
-        Vector2 currentForwardNormal = body.getWorldVector(new Vector2(0, 1));
-        float currentSpeed = getForwardVelocity().dot(currentForwardNormal);
-
-        float force = 0;
-
-        if (desiredSpeed > currentSpeed) {
-            force = maxDriveForce;
-        } else if (desiredSpeed < currentSpeed) {
-            force = (-maxDriveForce);
-        } else {
-            return;
-        }
-        body.applyForce(
-                multiply(force, currentForwardNormal),
-                body.getWorldCenter(), true);
-    }
-
-     Vector2 getLateralVelocity() {
-        Vector2 currentRightNormal = body.getWorldVector(new Vector2(1,0));
-        return currentRightNormal.scl(currentRightNormal.dot(body.getLinearVelocity()));
-    }
-
     Vector2 getForwardVelocity() {
-        Vector2 currentForwardNormal = body.getWorldVector(new Vector2(0, 1));
-        return multiply(
-                currentForwardNormal.dot(body.getLinearVelocity()),
-                currentForwardNormal);
+        Vector2 result = body.getWorldVector(new Vector2(0, 1)); //Forw. normal
+        result.scl(result.dot(body.getLinearVelocity()));
+
+        return result;
+    }
+
+    Vector2 getLateralVelocity() {
+        Vector2 result = body.getWorldVector(new Vector2(1, 0)); //Right normal
+        result.scl(result.dot(body.getLinearVelocity()));
+
+        return result;
+    }
+
+    public void updateDrive() {
+        float speed = getForwardVelocity().len();
+
+        Vector2 driveForce = body.getWorldVector(new Vector2(0, 1));
+
+        switch(direction & (DIR_UP | DIR_DOWN)) {
+            case DIR_UP:
+                driveForce.scl(maxDriveForce);
+                break;
+            case DIR_DOWN:
+                driveForce.scl(-maxDriveForce);
+                break;
+            default:
+                return;
+        }
+
+        body.applyForceToCenter(driveForce, true);
     }
 
     public void updateFriction() {
-        Vector2 impulse = getLateralVelocity().scl(-body.getMass());
+        Vector2 impulse = getLateralVelocity().scl(-0.1f);
 
-        if (impulse.len() > maxLateralImpulse) {
-            impulse = multiply(maxLateralImpulse / impulse.len(), impulse);
+        body.applyForceToCenter(impulse, true);
+        //body.applyAngularImpulse(0.1f * body.getInertia() * -body.getAngularVelocity(), true);
+        //body.applyTorque(0.1f * body.getInertia() * -body.getAngularVelocity(), true);
+
+        Vector2 dragForce = getForwardVelocity().scl(-0.01f);
+
+        body.applyForceToCenter(dragForce, true);
+    }
+
+    /*
+    public void updateTurn() {
+        float desiredTorque = 0;
+
+        switch(direction & (DIR_LEFT | DIR_RIGHT)){
+            case DIR_LEFT:
+                desiredTorque = 15;
+                break;
+            case DIR_RIGHT:
+                desiredTorque = -15;
+                break;
+            default:
+                return;
         }
-        body.applyLinearImpulse(impulse,
-                body.getWorldCenter(), true);
-        body.applyAngularImpulse(0.1f * body.getInertia()
-                * -body.getAngularVelocity(), true);
-
-        Vector2 currentForwardNormal = getForwardVelocity();
-        float currentForwardSpeed =currentForwardNormal.nor().len();
-        float dragForceMagnitude = -2 * currentForwardSpeed;
-        body.applyForce(multiply( dragForceMagnitude,
-                currentForwardNormal), body.getWorldCenter(), true);
+        body.applyTorque(desiredTorque, true);
     }
-
-   public void updateTurn() {
-       float desiredTorque = 0;
-
-       switch(direction){
-           case left:
-               desiredTorque = 15;
-               break;
-           case right:
-               desiredTorque = -15;
-               break;
-           default:
-               return;
-       }
-       body.applyTorque(desiredTorque, true);
-    }
-
-
-
-    public static Vector2 multiply(float s, Vector2 a) {
-        return new Vector2(s * a.x, s * a.y);
-    }
-
+    */
 }

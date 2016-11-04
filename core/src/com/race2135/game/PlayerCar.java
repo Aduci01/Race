@@ -14,7 +14,7 @@ import com.badlogic.gdx.physics.box2d.joints.RevoluteJointDef;
 import com.badlogic.gdx.utils.Array;
 
 /**
- * Created by Adam on 2016. 11. 01..
+ * Created by Adam on 2016. 11. 01.
  */
 public class PlayerCar {
 
@@ -22,7 +22,7 @@ public class PlayerCar {
     Array<Tire> tires = new Array<Tire>();
     RevoluteJoint leftJoint, rightJoint;
 
-    String input = "";
+    byte input = 0;
 
     public PlayerCar(World world) {
         BodyDef bodyDef = new BodyDef();
@@ -61,10 +61,10 @@ public class PlayerCar {
         jointDef.upperAngle = 0;
         jointDef.localAnchorB.setZero();
 
-        float maxForwardSpeed = 250 / Main.PPM;
-        float maxBackwardSpeed = -40 / Main.PPM;
-        float backTireMaxDriveForce = 300 / Main.PPM;
-        float frontTireMaxDriveForce = 500 / Main.PPM;
+        float maxForwardSpeed = 60 / Main.PPM;
+        float maxBackwardSpeed = -10 / Main.PPM;
+        float backTireMaxDriveForce = 10 / Main.PPM;
+        float frontTireMaxDriveForce = 0 / Main.PPM;
         float backTireMaxLateralImpulse = 0f;
         float frontTireMaxLateralImpulse = 0f;
 
@@ -103,27 +103,30 @@ public class PlayerCar {
 
     public void update() {
         inputHandler();
-        /*for (Tire tire : tires) {
-            tire.updateFriction();
-        }*/
         for (Tire tire : tires) {
+            tire.updateFriction();
             tire.updateDrive();
         }
 
         float lockAngle = 35 * Main.DEGTORAD;
-        float turnSpeedPerSec = 160 * Main.DEGTORAD;
-        float turnPerTimeStep = turnSpeedPerSec / 60.0f;
+        float turnSpeed = 80 * Main.DEGTORAD;
+        float turnPerStep = turnSpeed / 60.0f;
         float desiredAngle = 0;
 
-        if(input == "left"){
-            desiredAngle = lockAngle;
-        } else if(input == "right"){
-            desiredAngle = -lockAngle;
+        switch (input & (Tire.DIR_LEFT | Tire.DIR_RIGHT)) {
+            case Tire.DIR_LEFT:
+                desiredAngle = lockAngle;
+                break;
+            case Tire.DIR_RIGHT:
+                desiredAngle = -lockAngle;
+                break;
+            default:
+                break;
         }
 
         float angleNow = leftJoint.getJointAngle();
         float angleToTurn = desiredAngle - angleNow;
-        angleToTurn = Math.max(-turnPerTimeStep, Math.min(angleToTurn, turnPerTimeStep));
+        angleToTurn = Math.max(-turnPerStep, Math.min(angleToTurn, turnPerStep));
         float newAngle = angleNow + angleToTurn;
 
         leftJoint.setLimits(newAngle, newAngle);
@@ -131,22 +134,24 @@ public class PlayerCar {
     }
 
     private void inputHandler() {
-        input = "";
-        for (Tire tire : tires) {
-            if(Gdx.input.isKeyPressed(Input.Keys.UP)) {
-                tire.direction = Tire.Direction.up;
-            }
-            else if(Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-                tire.direction = Tire.Direction.down;
-            }
-            else if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-                tire.direction = Tire.Direction.right;
-                input = "right";
-            }
-            else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-                tire.direction = Tire.Direction.left;
-                input = "left";
-            } else tire.direction = Tire.Direction.stop;
-        }
+        input = 0;
+
+        if(Gdx.input.isKeyPressed(Input.Keys.UP))
+            input |= Tire.DIR_UP;
+
+        if(Gdx.input.isKeyPressed(Input.Keys.DOWN))
+            input |= Tire.DIR_DOWN;
+
+        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT))
+            input |= Tire.DIR_RIGHT;
+
+        if(Gdx.input.isKeyPressed(Input.Keys.LEFT))
+            input |= Tire.DIR_LEFT;
+
+        for (Tire tire : tires)
+            tire.direction = input;
+
+        //Gdx.app.debug("Input", ((input & 1) == 1 ? "U" : "") + ((input & 2) == 2 ? "D" : "")
+        //        + ((input & 4) == 4 ? "L" : "") + ((input & 8) == 8 ? "R" : ""));
     }
 }

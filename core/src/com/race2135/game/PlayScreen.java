@@ -49,7 +49,7 @@ public class PlayScreen implements Screen {
     public void update(float dt) {
         playerCar.update();
 
-        this.world.step(0.016666668F, 6, 2);
+        this.world.step(1f/60f, 6, 2);
         gamecam.position.set(playerCar.body.getPosition(), gamecam.position.z);
         this.gamecam.update();
     }
@@ -61,7 +61,7 @@ public class PlayScreen implements Screen {
 
         spriteBatch.begin();
         spriteBatch.setProjectionMatrix(gamecam.combined);
-        spriteBatch.draw(texture, 100 / Main.PPM, 100 / Main.PPM);
+        spriteBatch.draw(texture, 10 / Main.PPM, 10 / Main.PPM);
         spriteBatch.end();
 
         this.b2dr.render(this.world, this.gamecam.combined);
