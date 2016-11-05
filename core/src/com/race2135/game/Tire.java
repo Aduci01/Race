@@ -25,7 +25,7 @@ public class Tire {
     float maxForwardSpeed, maxBackwardSpeed, maxDriveForce, maxLateralImpulse;
 
 
-    public Tire(World world) {
+    public void __Tire(World world) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         body = world.createBody(bodyDef);
@@ -42,6 +42,23 @@ public class Tire {
         Fixture fixture = body.createFixture(fixtureDef);
 
         body.setUserData(this);
+    }
+
+    public Tire(World world) {
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.DynamicBody;
+        body = world.createBody(bodyDef);
+
+        PolygonShape polygonShape = new PolygonShape();
+        polygonShape.setAsBox(0.10f, 0.325f);
+
+        FixtureDef fixtureDef = new FixtureDef();
+        fixtureDef.shape = polygonShape;
+        fixtureDef.density = 1;
+        fixtureDef.isSensor = true;
+        Fixture fixture = body.createFixture(fixtureDef);
+
+        //body.setUserData(this);
     }
 
     //TODO create proper mutators and accessors
@@ -87,7 +104,7 @@ public class Tire {
     }
 
     public void updateFriction() {
-        Vector2 impulse = getLateralVelocity().scl(-0.1f);
+        Vector2 impulse = getLateralVelocity().scl(-0.5f);
 
         body.applyForceToCenter(impulse, true);
         //body.applyAngularImpulse(0.1f * body.getInertia() * -body.getAngularVelocity(), true);

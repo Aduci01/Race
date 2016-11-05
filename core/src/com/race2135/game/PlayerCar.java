@@ -5,7 +5,6 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
@@ -24,7 +23,7 @@ public class PlayerCar {
 
     byte input = 0;
 
-    public PlayerCar(World world) {
+    public void __PlayerCar(World world) {
         BodyDef bodyDef = new BodyDef();
 
         bodyDef.type = BodyDef.BodyType.DynamicBody;
@@ -61,12 +60,12 @@ public class PlayerCar {
         jointDef.upperAngle = 0;
         jointDef.localAnchorB.setZero();
 
-        float maxForwardSpeed = 60 / Main.PPM;
-        float maxBackwardSpeed = -10 / Main.PPM;
-        float backTireMaxDriveForce = 10 / Main.PPM;
-        float frontTireMaxDriveForce = 0 / Main.PPM;
-        float backTireMaxLateralImpulse = 0f;
-        float frontTireMaxLateralImpulse = 0f;
+        float maxForwardSpeed = 60;
+        float maxBackwardSpeed = -10;
+        float backTireMaxDriveForce = 10;
+        float frontTireMaxDriveForce = 0;
+        float backTireMaxLateralImpulse = 0;
+        float frontTireMaxLateralImpulse = 0;
 
         Tire tire = new Tire(world);
         tire.setValues(maxForwardSpeed, maxBackwardSpeed,
@@ -101,6 +100,69 @@ public class PlayerCar {
         tires.add(tire);
     }
 
+    public PlayerCar(World world) {
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.DynamicBody;
+
+        body = world.createBody(bodyDef);
+        body.setAngularDamping(3);
+
+        PolygonShape polygonShape = new PolygonShape();
+        polygonShape.setAsBox(0.9f, 2);
+
+        FixtureDef fixtureDef = new FixtureDef();
+        fixtureDef.shape = polygonShape;
+        fixtureDef.density = 0.1f;
+
+        body.createFixture(fixtureDef);
+
+        RevoluteJointDef jointDef = new RevoluteJointDef();
+        jointDef.bodyA = body;
+        jointDef.enableLimit = true;
+        jointDef.lowerAngle = 0;
+        jointDef.upperAngle = 0;
+        jointDef.localAnchorB.setZero();
+
+        float maxForwardSpeed = 120;
+        float maxBackwardSpeed = -20;
+        float backTireMaxDriveForce = 100;
+        float frontTireMaxDriveForce = 0;
+        float backTireMaxLateralImpulse = 0;
+        float frontTireMaxLateralImpulse = 0;
+
+        Tire tire = new Tire(world);
+        tire.setValues(maxForwardSpeed, maxBackwardSpeed,
+                backTireMaxDriveForce, backTireMaxLateralImpulse);
+        jointDef.bodyB = tire.body;
+        jointDef.localAnchorA.set(-0.9f, -1.6f);
+        world.createJoint(jointDef);
+        tires.add(tire);
+
+        tire = new Tire(world);
+        tire.setValues(maxForwardSpeed, maxBackwardSpeed,
+                backTireMaxDriveForce, backTireMaxLateralImpulse);
+        jointDef.bodyB = tire.body;
+        jointDef.localAnchorA.set(0.9f, -1.6f);
+        world.createJoint(jointDef);
+        tires.add(tire);
+
+        tire = new Tire(world);
+        tire.setValues(maxForwardSpeed, maxBackwardSpeed,
+                frontTireMaxDriveForce, frontTireMaxLateralImpulse);
+        jointDef.bodyB = tire.body;
+        jointDef.localAnchorA.set(-0.9f, 1.6f);
+        leftJoint = (RevoluteJoint)world.createJoint(jointDef);
+        tires.add(tire);
+
+        tire = new Tire(world);
+        tire.setValues(maxForwardSpeed, maxBackwardSpeed,
+                frontTireMaxDriveForce, frontTireMaxLateralImpulse);
+        jointDef.bodyB = tire.body;
+        jointDef.localAnchorA.set(0.9f, 1.6f);
+        rightJoint = (RevoluteJoint)world.createJoint(jointDef);
+        tires.add(tire);
+    }
+
     public void update() {
         inputHandler();
         for (Tire tire : tires) {
@@ -108,7 +170,7 @@ public class PlayerCar {
             tire.updateDrive();
         }
 
-        float lockAngle = 35 * Main.DEGTORAD;
+        float lockAngle = 20 * Main.DEGTORAD;
         float turnSpeed = 80 * Main.DEGTORAD;
         float turnPerStep = turnSpeed / 60.0f;
         float desiredAngle = 0;
